@@ -197,10 +197,11 @@ function scheduleTask(raw) {
 
   // STUDY
   if (has(['study','homework','assignment','exam','test','quiz'])) {
-    if (h < 14) return { title, scheduled: time(60,120), reason: 'Good focus window coming up.', badge: 'soon' };
-    if (h < 20) return { title, scheduled: time(30,90),  reason: 'Solid evening study block.',  badge: 'soon' };
-    return { title, scheduled: time(600,900), reason: 'Better done fresh tomorrow.', badge: 'later' };
-  }
+  if (h < 14) return { title, scheduled: time(60,120), reason: 'Good focus window coming up.', badge: 'soon' };
+  if (h < 20) return { title, scheduled: time(30,90),  reason: 'Solid evening study block.',  badge: 'soon' };
+  if (h < 23) return { title, scheduled: time(15,45),  reason: 'Quick late-night review.',   badge: 'now' };
+  return { title, scheduled: time(600,900), reason: 'Better done fresh tomorrow.', badge: 'later' };
+}
 
   // MESSAGES
   if (has(['email','text','call','reply','dm','message'])) {
@@ -220,10 +221,21 @@ function scheduleTask(raw) {
     return { title, scheduled: time(600,900), reason: 'Best done tomorrow morning.', badge: 'later' };
   }
 
-  // GENERIC
-  if (h < 18) return { title, scheduled: time(30,120), reason: 'Fits nicely into your day.', badge: 'soon' };
-  return { title, scheduled: time(600,900), reason: 'Handle it tomorrow.', badge: 'later' };
+  // GENERIC (fixed)
+if (h < 12) {
+  return { title, scheduled: time(30,90), reason: 'Good morning momentum.', badge: 'soon' };
 }
+
+if (h < 17) {
+  return { title, scheduled: time(30,120), reason: 'Fits nicely into your day.', badge: 'soon' };
+}
+
+if (h < 21) {
+  return { title, scheduled: time(15,60), reason: 'You still have time tonight.', badge: 'soon' };
+}
+
+// ONLY very late → tomorrow
+return { title, scheduled: time(600,900), reason: 'Better handled tomorrow.', badge: 'later' };
 
 // ---------- TASK ACTIONS ----------
 function addTask() {
