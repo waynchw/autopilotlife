@@ -145,7 +145,26 @@
 <script>
 const tasks = [];
 
-// Clock
+// ---------- TIME HELPERS ----------
+function getFutureTime(minOffset, maxOffset) {
+  const d = new Date();
+  const offset = minOffset + Math.random() * (maxOffset - minOffset);
+  d.setMinutes(d.getMinutes() + offset);
+
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+
+  return `${h}:${String(m).padStart(2, '0')} ${ap}`;
+}
+
+function randomPrefix() {
+  const arr = ['Around', 'At', 'Try', 'Aim for'];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ---------- CLOCK ----------
 function updateClock() {
   const n = new Date(), h = n.getHours(), m = n.getMinutes();
   const ap = h >= 12 ? 'PM' : 'AM', hh = h % 12 || 12;
@@ -156,7 +175,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Scheduler
+// ---------- SCHEDULER ----------
 function scheduleTask(raw) {
   const t = raw.toLowerCase();
   const h = new Date().getHours();
@@ -170,71 +189,48 @@ function scheduleTask(raw) {
   title = title.charAt(0).toUpperCase() + title.slice(1);
   if (title.length > 55) title = title.slice(0, 55).trim() + '…';
 
-  // Immediate
-  if (has(['now','asap','urgent','immediately','right now']))
-    return { title, scheduled: 'Right now', reason: 'Flagged as urgent — do it immediately.', badge: 'now' };
+  const time = (a, b) => `${randomPrefix()} ${getFutureTime(a, b)}`;
 
-  // Tomorrow
-  if (has(['tomorrow','next day'])) {
-    const st = has(['study','homework','assignment','essay','exam','test']) ? '9:00 AM'
-             : has(['gym','workout','run','exercise']) ? '7:00 AM' : '10:00 AM';
-    return { title, scheduled: `Tomorrow at ${st}`, reason: 'Scheduled for tomorrow when you\'re fresh.', badge: 'later' };
+  // URGENT
+  if (has(['now','asap','urgent','immediately']))
+    return { title, scheduled: 'Right now', reason: 'Urgent — do it immediately.', badge: 'now' };
+
+  // STUDY
+  if (has(['study','homework','assignment','exam','test','quiz'])) {
+    if (h < 14) return { title, scheduled: time(60,120), reason: 'Good focus window coming up.', badge: 'soon' };
+    if (h < 20) return { title, scheduled: time(30,90),  reason: 'Solid evening study block.',  badge: 'soon' };
+    return { title, scheduled: time(600,900), reason: 'Better done fresh tomorrow.', badge: 'later' };
   }
 
-  // Explicit time-of-day words
-  if (has(['before bed','late night','midnight','11pm']))
-    return { title, scheduled: '10:30 PM tonight', reason: 'Best tackled right before bed.', badge: h >= 21 ? 'now' : 'later' };
-  if (has(['tonight','this evening','after dinner','7pm','8pm','9pm']))
-    return { title, scheduled: '7:30 PM tonight', reason: 'Evening is a great window for this.', badge: h >= 19 ? 'soon' : 'later' };
-  if (has(['this afternoon','after school','after lunch','3pm','4pm','5pm']))
-    return { title, scheduled: '4:00 PM today', reason: 'Afternoon focus block is ideal.', badge: (h >= 13 && h < 18) ? 'soon' : 'later' };
-  if (has(['this morning','early','7am','8am']))
-    return { title, scheduled: h < 10 ? 'In 20 minutes' : 'Tomorrow at 8:00 AM', reason: 'Morning energy is perfect for this.', badge: h < 10 ? 'now' : 'later' };
-
-  // Category-based smart scheduling
-  if (has(['study','homework','assignment','essay','read chapter','review','practice','quiz','exam','test'])) {
-    if (h < 9)  return { title, scheduled: '9:00 AM today',    reason: 'Morning is peak focus time.',          badge: 'soon' };
-    if (h < 14) return { title, scheduled: '3:00 PM today',    reason: 'Afternoon study session.',             badge: 'later' };
-    if (h < 18) return { title, scheduled: '7:00 PM tonight',  reason: 'Evening study is highly effective.',   badge: 'later' };
-    if (h < 21) return { title, scheduled: 'In 30 minutes',    reason: 'Good time to hit the books.',          badge: 'now' };
-                return { title, scheduled: 'Tomorrow at 9 AM', reason: 'Rest up — study fresh tomorrow.',      badge: 'later' };
+  // MESSAGES
+  if (has(['email','text','call','reply','dm','message'])) {
+    if (h < 20) return { title, scheduled: time(10,30), reason: 'Quick communication task.', badge: 'now' };
+    return { title, scheduled: time(600,800), reason: 'Send it in the morning.', badge: 'later' };
   }
 
-  if (has(['email','message','text','call','reply','respond','contact','reach out','dm','slack'])) {
-    if (h < 9)  return { title, scheduled: 'In 15 minutes',     reason: 'Send it while you\'re in morning mode.', badge: 'now' };
-    if (h < 17) return { title, scheduled: 'In 20 minutes',     reason: 'Business hours — best time to send.',    badge: 'now' };
-    if (h < 20) return { title, scheduled: 'In 30 minutes',     reason: 'Still reasonable time to reach out.',    badge: 'soon' };
-                return { title, scheduled: 'Tomorrow morning',   reason: 'Send fresh in the morning instead.',     badge: 'later' };
+  // CHORES
+  if (has(['clean','laundry','dishes','trash','cook','groceries'])) {
+    if (h < 18) return { title, scheduled: time(30,90), reason: 'Nice productivity break.', badge: 'soon' };
+    return { title, scheduled: time(15,45), reason: 'Quick win before relaxing.', badge: 'now' };
   }
 
-  if (has(['clean','wash','laundry','dishes','trash','vacuum','cook','groceries','buy','pick up','tidy'])) {
-    if (h < 11) return { title, scheduled: 'This morning',    reason: 'Knock it out early, free your day.',  badge: 'soon' };
-    if (h < 15) return { title, scheduled: 'After lunch',     reason: 'Good midday task to clear your head.',badge: 'soon' };
-    if (h < 19) return { title, scheduled: 'Before dinner',   reason: 'Wrap it up before your evening.',     badge: 'later' };
-                return { title, scheduled: 'In 20 minutes',   reason: 'Quick win before you wind down.',     badge: 'now' };
+  // WORKOUT
+  if (has(['gym','workout','run','exercise'])) {
+    if (h < 15) return { title, scheduled: time(120,240), reason: 'Great later energy boost.', badge: 'later' };
+    return { title, scheduled: time(600,900), reason: 'Best done tomorrow morning.', badge: 'later' };
   }
 
-  if (has(['gym','workout','run','exercise','jog','yoga','lift','stretch','walk'])) {
-    if (h < 10) return { title, scheduled: 'This morning',     reason: 'Morning workouts set the tone all day.', badge: 'now' };
-    if (h < 15) return { title, scheduled: '5:30 PM today',    reason: 'Post-day energy is great for workouts.',  badge: 'later' };
-                return { title, scheduled: 'Tomorrow at 7 AM', reason: 'Rest tonight, crush it tomorrow.',        badge: 'later' };
-  }
-
-  // "soon" keyword catch-all
-  if (has(['soon','in a bit','shortly','before class','before school']))
-    return { title, scheduled: 'In 45 minutes', reason: 'You said soon — setting it for shortly.', badge: 'soon' };
-
-  // Generic fallback by time of day
-  if (h < 12) return { title, scheduled: 'This afternoon',    reason: 'A natural slot later in your day.',   badge: 'later' };
-  if (h < 17) return { title, scheduled: 'At 6:00 PM',        reason: 'Good window after your current tasks.',badge: 'later' };
-  if (h < 20) return { title, scheduled: 'In 30 minutes',     reason: 'You have a free window right now.',    badge: 'soon' };
-              return { title, scheduled: 'Tomorrow morning',   reason: 'Sleep first, tackle this fresh.',      badge: 'later' };
+  // GENERIC
+  if (h < 18) return { title, scheduled: time(30,120), reason: 'Fits nicely into your day.', badge: 'soon' };
+  return { title, scheduled: time(600,900), reason: 'Handle it tomorrow.', badge: 'later' };
 }
 
+// ---------- TASK ACTIONS ----------
 function addTask() {
   const input = document.getElementById('task-input');
   const raw = input.value.trim();
   if (!raw) return;
+
   tasks.push({ id: Date.now(), ...scheduleTask(raw), done: false });
   input.value = '';
   input.focus();
@@ -251,15 +247,16 @@ function toggleDone(id) {
   if (t) { t.done = !t.done; render(); }
 }
 
+// ---------- RENDER ----------
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function render() {
-  const list      = document.getElementById('task-list');
+  const list = document.getElementById('task-list');
   const naSection = document.getElementById('next-action-section');
-  const statsBar  = document.getElementById('stats-bar');
-  const tasksLabel= document.getElementById('tasks-label');
+  const statsBar = document.getElementById('stats-bar');
+  const tasksLabel = document.getElementById('tasks-label');
 
   if (tasks.length === 0) {
     list.innerHTML = '<div class="empty"><div class="empty-icon">◎</div>Add a task above to get started.</div>';
@@ -268,18 +265,18 @@ function render() {
   }
 
   tasksLabel.style.display = 'block';
-  statsBar.style.display   = 'flex';
+  statsBar.style.display = 'flex';
 
-  document.getElementById('stat-total').textContent  = tasks.length;
-  document.getElementById('stat-done').textContent   = tasks.filter(t => t.done).length;
+  document.getElementById('stat-total').textContent = tasks.length;
+  document.getElementById('stat-done').textContent = tasks.filter(t => t.done).length;
   document.getElementById('stat-urgent').textContent = tasks.filter(t => !t.done && t.badge === 'now').length;
 
   const nowTask = tasks.find(t => !t.done && t.badge === 'now');
   if (nowTask) {
     naSection.style.display = 'block';
     document.getElementById('na-title').textContent = nowTask.title;
-    document.getElementById('na-why').textContent   = nowTask.reason || '';
-    document.getElementById('na-meta').textContent  = nowTask.scheduled ? `Suggested: ${nowTask.scheduled}` : '';
+    document.getElementById('na-why').textContent = nowTask.reason || '';
+    document.getElementById('na-meta').textContent = `Suggested: ${nowTask.scheduled}`;
   } else {
     naSection.style.display = 'none';
   }
@@ -298,8 +295,8 @@ function render() {
           <span class="task-title ${t.done ? 'done-text' : ''}">${esc(t.title)}</span>
           <span class="badge badge-${t.badge}">${t.badge}</span>
         </div>
-        ${t.scheduled ? `<div class="task-scheduled">${esc(t.scheduled)}</div>` : ''}
-        ${t.reason    ? `<div class="task-reason">${esc(t.reason)}</div>` : ''}
+        <div class="task-scheduled">${esc(t.scheduled)}</div>
+        <div class="task-reason">${esc(t.reason)}</div>
       </div>
     </div>
   `).join('');
