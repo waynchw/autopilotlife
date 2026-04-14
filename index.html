@@ -297,7 +297,7 @@ function render() {
     naSection.style.display = 'none';
   }
 
-  const order = { now: 0, soon: 1, later: 2 };
+  const order = { now: 0, soon: 1, later: 2, leisure: 3 };
   const sorted = [...tasks].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
     return (order[a.badge] ?? 2) - (order[b.badge] ?? 2);
