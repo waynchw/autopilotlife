@@ -247,7 +247,24 @@ function addTask() {
   const raw = input.value.trim();
   if (!raw) return;
 
-  tasks.push({ id: Date.now(), ...scheduleTask(raw), done: false });
+  const result = scheduleTask(raw);
+
+  // 🛡 safety fallback (prevents crashes)
+  if (!result) {
+    console.error("scheduleTask returned nothing");
+
+    tasks.push({
+      id: Date.now(),
+      title: raw,
+      scheduled: "Soon",
+      reason: "Fallback scheduling.",
+      badge: "soon",
+      done: false
+    });
+  } else {
+    tasks.push({ id: Date.now(), ...result, done: false });
+  }
+
   input.value = '';
   input.focus();
   render();
