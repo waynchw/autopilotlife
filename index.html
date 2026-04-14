@@ -221,7 +221,7 @@ function scheduleTask(raw) {
     return { title, scheduled: time(600,900), reason: 'Best done tomorrow morning.', badge: 'later' };
   }
 
-  // GENERIC (fixed)
+  // GENERIC
 if (h < 12) {
   return { title, scheduled: time(30,90), reason: 'Good morning momentum.', badge: 'soon' };
 }
@@ -235,7 +235,7 @@ if (h < 21) {
 }
 
 // ONLY very late → tomorrow
-return { title, scheduled: time(600,900), reason: 'Better handled tomorrow.', badge: 'later' };
+return { title, scheduled: time(600,900), reason: 'Start before you sleep, finish tomorrow.', badge: 'later' };
 
 // ---------- TASK ACTIONS ----------
 function addTask() {
