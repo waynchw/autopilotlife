@@ -194,6 +194,10 @@ function scheduleTask(raw) {
   // URGENT
   if (has(['now','asap','urgent','immediately']))
     return { title, scheduled: 'Right now', reason: 'Urgent — do it immediately.', badge: 'now' };
+ 
+ // URGENT
+  if (has(['game','games','play','relax','watch','chill']))
+    return { title, scheduled: 'Way later', reason: 'Do it after everything else.', badge: 'leisure' };
 
   // STUDY
   if (has(['study','homework','assignment','exam','test','quiz'])) {
